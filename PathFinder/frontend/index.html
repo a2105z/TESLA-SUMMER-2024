@@ -4,49 +4,116 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PathFinder</title>
+  <title>TNAV – Tesla Navigation</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="css/styles.css" />
-  <!-- Define a professional color palette -->
-  <style>
-    :root {
-      --color-bg: #f0f4f8;
-      --color-header-bg: #0a3d62;
-      --color-header-text: #ffffff;
-      --color-button-bg: #1e3799;
-      --color-button-hover: #3c40c6;
-      --color-select-bg: #ffffff;
-      --color-select-border: #1e3799;
-      --color-grid-border: #d1d8e0;
-      --color-cell-wall: #2f3542;
-      --color-cell-start: #ffa502;
-      --color-cell-end: #ff4757;
-      --color-cell-visited: #70a1ff;
-      --color-cell-path: #2ed573;
-    }
-  </style>
 </head>
-<body class="professional-theme">
-  <header class="controls">
-    <h1>PathFinder</h1>
-    <label for="algorithm">Algorithm:</label>
-    <select id="algorithm">
-      <option value="bfs">Breadth‑First Search</option>
-      <option value="dfs">Depth‑First Search</option>
-      <option value="dijkstra">Dijkstra’s Algorithm</option>
-      <option value="astar">A* Search</option>
-      <option value="bidirectional">Bidirectional Search</option>
-      <option value="gbfs">Greedy Best‑First Search</option>
-      <option value="jps">Jump Point Search</option>
-      <option value="rbfs">Recursive Best‑First Search</option>
-    </select>
-    <button id="run-btn">Run</button>
-    <button id="clear-btn">Clear</button>
+<body class="evnav-theme">
+  <header class="evnav-header">
+    <div class="evnav-title">
+      <h1>TNAV</h1>
+      <span class="evnav-subtitle">Tesla Navigation · Supercharger-Optimized Routing</span>
+    </div>
+
+    <div class="evnav-controls">
+      <div class="control-group">
+        <label for="vehicle-select">Vehicle</label>
+        <select id="vehicle-select"></select>
+      </div>
+
+      <div class="search-bar-group">
+        <div class="search-bar">
+          <span class="search-icon">📍</span>
+          <input type="text" id="start-address" placeholder="Choose starting location" />
+        </div>
+        <div class="search-bar">
+          <span class="search-icon">🎯</span>
+          <input type="text" id="end-address" placeholder="Choose destination" />
+        </div>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">Mode</span>
+        <div class="mode-toggle" id="mode-toggle">
+          <button data-mode="fastest" class="mode-btn">Fastest</button>
+          <button data-mode="balanced" class="mode-btn mode-btn-active">Balanced</button>
+          <button data-mode="energy_saver" class="mode-btn">Energy Saver</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label for="initial-soc">Initial SoC</label>
+        <div class="soc-slider-wrapper">
+          <input type="range" id="initial-soc" min="20" max="100" value="80" />
+          <span id="initial-soc-label">80%</span>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label for="traffic-intensity">Traffic</label>
+        <div class="soc-slider-wrapper">
+          <input type="range" id="traffic-intensity" min="0" max="100" value="20" />
+          <span id="traffic-intensity-label">Low</span>
+        </div>
+      </div>
+
+      <button id="plan-route-btn" class="primary-action">Navigate</button>
+      <button id="test-route-btn" class="test-action">🧪 Test Route (Demo)</button>
+    </div>
   </header>
 
-  <main>
-    <div id="grid" class="grid-container"></div>
+  <main class="evnav-main">
+    <section class="evnav-map-panel">
+      <div id="map-container" class="map-container">
+        <!-- SVG map is injected here -->
+      </div>
+      <div class="evnav-legend">
+        <span class="legend-item"><span class="legend-swatch legend-road-local"></span>Local</span>
+        <span class="legend-item"><span class="legend-swatch legend-road-arterial"></span>Arterial</span>
+        <span class="legend-item"><span class="legend-swatch legend-road-highway"></span>Highway</span>
+        <span class="legend-item"><span class="legend-node legend-node-charger"></span>Charger</span>
+        <span class="legend-item"><span class="legend-route"></span>Planned Route</span>
+      </div>
+    </section>
+
+    <aside class="evnav-side-panel">
+      <section class="panel-section">
+        <h2>Trip Summary</h2>
+        <div class="trip-metrics">
+          <div class="metric">
+            <span class="metric-label">Total Time</span>
+            <span class="metric-value" id="metric-time">–</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Energy Used</span>
+            <span class="metric-value" id="metric-energy">–</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Charging Stops</span>
+            <span class="metric-value" id="metric-charges">–</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Current SoC</span>
+            <span class="metric-value" id="metric-current-soc">–</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <h2>Battery SoC</h2>
+        <canvas id="soc-chart" class="soc-chart"></canvas>
+      </section>
+
+      <section class="panel-section">
+        <h2>Route Details</h2>
+        <ul id="route-steps" class="route-step-list"></ul>
+      </section>
+    </aside>
   </main>
 
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
